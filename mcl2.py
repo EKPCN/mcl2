@@ -89,11 +89,20 @@ class MCL2(object):
     # Execute (move, calibrate, measureXY)
     def execute(self):
         self.__ser.write(str('U'+chr(80)+'\r'))
-        return(self.readMCL())
-        
+        try:
+            msg = self.readMCL()
+        except KeyboardInterrupt:
+            self.abort()
+            print("Aborted!")
+            self.updatePos()
+            raise
+
+        return msg
+
     def abort(self):
         self.__ser.write(str('a\r'))
         time.sleep(0.1)
+        return self.readMCL()
 
     # Calibration
     def calibrate(self):
@@ -162,7 +171,6 @@ class MCL2(object):
         self.moveTicks(x,y,False)
     
     def moveTicks(self,x=0,y=0,rel=True):
-        
         self.checkLimits(x,y,rel)
 
         if rel:
@@ -229,11 +237,14 @@ class MCL2(object):
 
     # Read
     def readMCL(self):
-        while self.__ser.inWaiting()==0:
-            pass
-        time.sleep(0.1)
-        return(self.__ser.read(self.__ser.inWaiting()))
-
+        try:
+            while self.__ser.inWaiting()==0:
+                pass
+            time.sleep(0.1)
+            return(self.__ser.read(self.__ser.inWaiting()))
+        except KeyboardInterrupt:
+            raise
+        
     def read(self,register):
         self.__ser.write(str('U'+chr(register)+'\r'))
         return(self.readMCL())
@@ -263,10 +274,7 @@ class MCL2(object):
 if __name__ == "__main__":
     
     motor = MCL2()
-    #motor.calibrate()
-    #motor.measureXY()
     #motor.fullCalibration()
-    #motor.move(10000,10000)
     motor.center()
 #try:
     #    while True:
